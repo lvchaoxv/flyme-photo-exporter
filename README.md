@@ -1,61 +1,60 @@
-# Flyme Photo Exporter (Phase 4 — 原图下载)
+# Flyme Photo Exporter
 
-备份本人魅族 Flyme 云相册（https://photos.flyme.cn）的工具，**下载原图**（非缩略图）。
+备份本人魅族 Flyme 云相册（https://photos.flyme.cn）的工具，**下载原图**（非缩略图）与视频。
 
-> 提供两个版本：
-> - **命令行版**：`scripts/flyme_export.js`（Node.js + Playwright，无浏览器依赖）
+> **提供三种使用方式**：
+> - **Windows 可执行文件**：`dist/flyme-photo-exporter.exe`（免安装，双击即用）
 > - **图形界面版**：`scripts/flyme_export_gui.py`（Python + Tkinter，选相册、看进度、点按钮导出）
+> - **命令行版**：`scripts/flyme_export.js`（Node.js + Playwright）
 
 > **合规声明**：本工具仅供个人备份**本人账号**内的相册内容，不内置任何账号共享、群控、撞库能力。使用本工具需自行承担违反 Flyme 用户协议或触发风控封号的风险。请勿用于他人账号或商业用途。
 
 ## 这是什么
 
-用 **Node.js + Playwright headless Chromium** 把浏览器自动化当作"已登录态 API 客户端"：
+一个把魅族云相册**备份到本地**的工具：
 
-- 你在正常 Chrome 登录 photos.flyme.cn（含滑块/二次验证）
-- 把 cookie 复制给本工具
-- 工具启动无头 Chromium，注入 cookie，解密 OSS 临时凭证，按阿里云 OSS 签名算法生成原图下载 URL，把图片二进制写到本地 `./photos/`
+- 你在 Chrome 登录 photos.flyme.cn（含滑块/二次验证）
+- 把登录凭证（`_utoken` 或 cookie）交给本工具
+- 工具解密 OSS 临时凭证，按阿里云 OSS 签名算法生成原图下载 URL，把图片/视频写到本地 `./photos/`
 
 ## 技术方案
 
-魅族云相册图片存阿里云 OSS 私有桶，需要 STS 临时凭证 + SigV1 签名。本工具的做法：
+魅族云相册图片存阿里云 OSS 私有桶，需要 STS 临时凭证 + SigV1 签名。核心思路：
 
-1. **浏览器端（一次性）**：flyme 前端 SDK 会把 `file/get_sig/v2` 返回的加密 STS 凭证用内置 RSA 私钥解密。工具复用 SDK 暴露的 `window.JSEncrypt` + 内置私钥，在浏览器里完成解密，拿到 `{bucket, region, accessKeyId, accessKeySecret, securityToken}`。
-2. **Node 端（下载主体）**：用 `crypto` 模块按阿里云 OSS SigV1 算法，对每张照片的原图 object key（`photo.url` 字段）计算签名 URL，然后直接 `fetch` 下载原图。
+1. **解密 STS 凭证**：flyme 前端 SDK 会把 `file/get_sig/v2` 返回的加密 STS 凭证用内置 RSA 私钥解密。工具复用该私钥，解密得到 `{bucket, region, accessKeyId, accessKeySecret, securityToken}`。
+2. **计算签名下载**：按阿里云 OSS SigV1 算法（HMAC-SHA1），对每张照片的原图 object key（`photo.url` 字段）计算签名 URL，然后下载原图。
 
 这样**完全绕开 sign 破解与 STS 解析**，且下载的是**原图**（`image/jpeg`，`photo.size` 字节数完全一致），而非缩略图。
 
+> **两个版本的技术差异**：
+> - **命令行版**（Node.js）：用 Playwright 打开网页、复用浏览器里的 `JSEncrypt` 解密 STS，需要 Node.js + Chromium。
+> - **图形界面版 / exe**（Python）：直接用 `requests` 调接口 + `cryptography` 解密 STS + `hmac` 签名，**无需浏览器、无需 Node.js**，最轻量。
+
 ## 功能
 
-- ✅ 启动 headless Chromium，加载 flyme 前端 SDK
-- ✅ 注入登录 cookie，自动调 `album/dir/list` 拿相册列表
-- ✅ 调 `album/list` 翻页拿每张照片元数据
-- ✅ 解密 STS 凭证，Node 端计算签名 URL，下载**原图** JPEG
+- ✅ 解密 STS 凭证，计算签名 URL，下载**原图** JPEG + MP4 视频
 - ✅ 断点续传：同名文件 + size 一致自动跳过
 - ✅ STS 凭证过期自动刷新（`expiredTime` 前 5 分钟触发）
-- ✅ 单相册模式（`--album <dirId>`）便于按相册分批备份
+- ✅ 按相册分文件夹，文件名保持原样
+- ✅ 图形界面 / 命令行双版本，界面版支持勾选相册、实时进度
 - ✅ 单文件重试 3 次，指数退避
 - ✅ 并发下载，默认 5 线程
-- ✅ 视频支持：默认跳过，`--video` 开启下载照片 + 视频
+- ✅ 视频支持：默认跳过，可开启下载照片 + 视频
 
-## 系统要求
+## 方式一：Windows 可执行文件（推荐，免安装）
 
-- Windows 10/11 x64 / macOS / Linux
-- **Node.js 18+**（依赖全局 `fetch`、`crypto` 模块）
-- 网络：能访问 `photos.flyme.cn`、`mzstorage.meizu.com`、`meizu-storage.oss-cn-shanghai.aliyuncs.com`
-- ~150 MB 磁盘：Playwright chromium 二进制
+下载 `dist/flyme-photo-exporter.exe`，**双击运行**即可，无需安装 Python 或任何依赖。
 
-## 安装
+操作流程：
 
-```bash
-cd flyme-photo-exporter
-npm install
-npx playwright install chromium   # 若 npm install 未自动装浏览器
-```
+1. 在输入框粘贴 `_utoken`（或把 `cookies.json` 放在 exe 同目录，点「读取 cookies.json」自动读取）
+2. 点「连接验证」，界面会列出所有相册
+3. 勾选要导出的相册，选择是否「同时下载视频」
+4. 点「开始导出」，进度条和日志实时显示
 
-## GUI 版（图形界面，推荐新手）
+> 首次运行 Windows 可能弹出 SmartScreen 提示，点「更多信息 → 仍要运行」即可（因为是未签名的个人程序）。
 
-无需命令行操作，界面化选相册、看进度、点按钮导出：
+## 方式二：图形界面版（Python 源码运行）
 
 ```bash
 # 安装依赖（Tkinter 是 Python 自带，无需装）
@@ -65,16 +64,25 @@ pip install requests cryptography
 python scripts/flyme_export_gui.py
 ```
 
-操作流程：
+操作流程与 exe 版相同。
 
-1. 在输入框粘贴 `_utoken`（或点「读取 cookies.json」自动读取）
-2. 点「连接验证」，界面会列出所有相册
-3. 勾选要导出的相册，选择是否「同时下载视频」
-4. 点「开始导出」，进度条和日志实时显示
+## 方式三：命令行版（Node.js）
 
-> 图形界面版**不需要浏览器、不需要 Node.js**，直接 `requests` 调接口 + Python 解密 STS + 下载原图。适合不熟悉命令行的用户。
+```bash
+cd flyme-photo-exporter
+npm install
+npx playwright install chromium   # 若 npm install 未自动装浏览器
+```
 
-## 使用（命令行版）
+### 系统要求（仅命令行版需要）
+
+- Windows 10/11 x64 / macOS / Linux
+- **Node.js 18+**（依赖全局 `fetch`、`crypto` 模块）
+- ~150 MB 磁盘：Playwright chromium 二进制
+
+> 无论哪个版本，都需要网络能访问 `photos.flyme.cn`、`mzstorage.meizu.com`、`meizu-storage.oss-cn-shanghai.aliyuncs.com`。
+
+## 命令行版使用说明
 
 ### 1. 导出 cookie
 
@@ -157,23 +165,27 @@ node scripts/flyme_export.js --cookie-file cookies.json --video
 
 ```
 flyme-photo-exporter/
+├── dist/
+│   └── flyme-photo-exporter.exe   # Windows 可执行文件(免安装)
 ├── scripts/
-│   └── flyme_export.js      # 主脚本(单文件)
-├── docs/                    # 协议文档(旧 Phase 资料,保留参考)
-├── app/                     # 旧 Phase 1 Python 骨架(已废弃,保留)
-├── main.py                  # 旧 PyQt6 GUI 入口(已废弃,保留)
-├── requirements.txt         # 旧 Python 依赖(已废弃,保留)
-├── package.json             # Node.js 项目配置
-└── README.md                # 本文件
+│   ├── flyme_export_gui.py       # 图形界面版(Python + Tkinter)
+│   ├── flyme_export.js           # 命令行版(Node.js)
+│   └── capture_guide.py          # 抓包辅助脚本
+├── docs/                         # 使用指南 / 实现方案 / 复盘 / 协议文档
+├── app/                          # 旧 Phase 1 Python 骨架(已废弃,保留参考)
+├── main.py                       # 旧 PyQt6 GUI 入口(已废弃,保留参考)
+├── package.json                  # 命令行版依赖
+├── requirements.txt              # 图形界面版依赖(requests + cryptography)
+└── README.md                     # 本文件
 ```
 
 输出目录示例（相册目录名 = `dirName`）：
 
 ```
 photos/
-├── DCIM/            # 707 张(含 71 视频,实际 636 张照片)
+├── DCIM/            # 707 项(636 照片 + 71 视频)
 │   ├── IMG_20200101_120000.jpg
-│   └── ...
+│   └── V00730-182650.mp4
 ├── Camera/          # 285 张
 └── Screenshots/     # 228 张
 ```
@@ -197,10 +209,16 @@ A: cookie 已过期或被浏览器清掉。重新登录 photos.flyme.cn，刷新
 A: 原图。文件 magic bytes 为 `FF D8 FF`（JPEG），大小与相册元数据 `photo.size` 完全一致。缩略图是 `@256w_2o.webp`，本工具不会下载。
 
 **Q: 视频怎么下载？**
-A: 加 `--video` 参数即可同时下载视频（`isVideo=true` 的 mp4）。默认跳过是为了避免误下大文件。
+A: 界面版勾选「同时下载视频」；命令行版加 `--video` 参数。默认跳过是为了避免误下大文件。
 
-**Q: 旧 Python 代码还能用吗？**
-A: 旧 `app/`、`main.py`、`build.spec` 已废弃，仅作协议逆向参考保留。GUI/打包功能未实现。
+**Q: exe 双击没反应 / 被拦截？**
+A: Windows SmartScreen 可能拦截未签名程序，点「更多信息 → 仍要运行」。若双击闪退，把 `cookies.json` 放 exe 同目录再试，或改用 `python scripts/flyme_export_gui.py` 源码运行查看报错。
+
+**Q: 图形界面版和命令行版用哪个？**
+A: 普通用户用 **exe 或 GUI 版**（免装环境）；需要自动化/脚本化时才用命令行版。
+
+**Q: 旧 Python 代码（app/、main.py）还能用吗？**
+A: 旧 `app/`、`main.py`、`build.spec` 是 Phase 1 的 PyQt6 骨架，已废弃，仅作协议逆向参考保留。当前可用的入口是 `scripts/flyme_export_gui.py`（GUI）和 `scripts/flyme_export.js`（CLI）。
 
 ## License
 
