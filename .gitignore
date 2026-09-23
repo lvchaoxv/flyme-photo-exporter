@@ -25,6 +25,10 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
+# PyInstaller 打包产物(build/ 与 *.spec 为中间产物;dist/ 内的 exe 作为发布物保留)
+build/
+*.spec
+
 # 系统 / 编辑器
 .DS_Store
 Thumbs.db
