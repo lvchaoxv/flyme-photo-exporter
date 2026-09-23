@@ -1,0 +1,30 @@
+{
+  "name": "flyme-photo-exporter",
+  "version": "3.0.0",
+  "description": "浏览器自动化驱动的魅族云相册导出工具(Node.js + Playwright,headless Chromium 接管登录会话)",
+  "private": true,
+  "type": "commonjs",
+  "main": "scripts/flyme_export.js",
+  "scripts": {
+    "start": "node scripts/flyme_export.js",
+    "install:browsers": "playwright install chromium",
+    "test:small": "node scripts/flyme_export.js --album 76227 --limit 34",
+    "test:full": "node scripts/flyme_export.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "keywords": [
+    "flyme",
+    "meizu",
+    "photos",
+    "exporter",
+    "playwright",
+    "backup"
+  ],
+  "author": "",
+  "license": "MIT"
+}

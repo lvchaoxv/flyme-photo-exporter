@@ -1,0 +1,46 @@
+# Node.js
+node_modules/
+package-lock.json
+
+# 下载的照片(本地备份,可重复生成)
+photos/
+downloads/
+out/
+
+# Playwright 缓存
+.playwright/
+playwright-report/
+test-results/
+
+# 浏览器输出(playwright launch 临时目录)
+playwright/.cache/
+playwright/.local-browsers/
+
+# Python 旧项目产物(保留源码,排除运行环境)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log
+
+# 临时抓包数据
+captures/
+*.har
+cookies.txt
+cookies.json
+
+# 凭据 / Token(请勿提交)
+.env
+.env.local
+*.token

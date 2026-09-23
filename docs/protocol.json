@@ -1,0 +1,117 @@
+{
+  "version": "1.0.0",
+  "captured_at": "2026-09-23",
+  "captured_by": "manual_capture",
+  "base_url": "https://mzstorage.meizu.com",
+  "web_origin": "https://photos.flyme.cn",
+  "common": {
+    "method": "POST",
+    "content_type": "application/x-www-form-urlencoded",
+    "headers": {
+      "origin": "https://photos.flyme.cn",
+      "referer": "https://photos.flyme.cn/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+      "accept": "*/*",
+      "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "cross-site"
+    },
+    "body_field_order": ["<business_fields>", "cts", "token", "sign"],
+    "cts_field": "cts"
+  },
+  "sign": {
+    "algorithm": "md5_concat",
+    "description": "MD5(按发送顺序拼接所有业务参数 + &key={secret})。具体密钥从浏览器登录页 JS 源码中提取。",
+    "key_or_secret": "<PLACEHOLDER_REQUIRED_FROM_JS>",
+    "key_position": "end",
+    "field_order": "as_sent",
+    "notes": [
+      "三个已抓取 sign 都是 32 位十六进制字符串，符合 MD5 特征",
+      "不同接口 sign 不同是因为请求参数不同",
+      "密钥可能是固定字符串或从登录页动态下发"
+    ]
+  },
+  "auth": {
+    "mode": "token_from_browser",
+    "description": "Flyme 登录页含滑块验证码，工具不实现自动登录。用户需在浏览器完成登录（含滑块），再从任一接口请求 form body 中复制 token 值。",
+    "token_field": "token",
+    "token_cookie_name": "MZTOKEN",
+    "token_min_length": 800,
+    "token_example": "GMeRXOX2unUssZO3v7OT5yVe..."
+  },
+  "user_info": {
+    "url": "https://mzstorage.meizu.com/user/info",
+    "method": "POST",
+    "body_template": {
+      "type": "0"
+    },
+    "response_path": ["value"],
+    "response_sample": {
+      "fileNum": 1220,
+      "maxFileNum": 1000,
+      "vipName": "体验版",
+      "maxVolume": 5368709120,
+      "usedVolume": 2914980477
+    }
+  },
+  "get_sig": {
+    "url": "https://mzstorage.meizu.com/file/get_sig/v2",
+    "method": "POST",
+    "body_template": {
+      "type": "2"
+    },
+    "response_field": "value",
+    "response_sample_note": "value 为 base64-ish 长字符串。推测用于拼装真实下载 URL。完整下载 URL 模板待补充。"
+  },
+  "album_group": {
+    "url": "https://mzstorage.meizu.com/album/group",
+    "method": "POST",
+    "body_template": {
+      "order": "1"
+    },
+    "response_path": ["value", "years"],
+    "description": "返回按年/月/日分组的照片统计。该接口的 'count' 字段是照片总数，不分类型。"
+  },
+  "album_list_topn": {
+    "url": "https://mzstorage.meizu.com/album/listTopN",
+    "method": "POST",
+    "body_template": {
+      "days": "<comma_separated_dates>",
+      "limit": "100",
+      "order": "1",
+      "isWebp": "true"
+    },
+    "response_is_map": true,
+    "description": "返回 Map<date, List[photo_meta]> 结构。注意 days 是 URL 中重复的 days= 参数（推测实际是 days=2020-10-04&days=2020-10-02&... 而非逗号分隔）。需进一步抓包确认。",
+    "photo_field_mapping": {
+      "photo_id": "id",
+      "filename": "fileName",
+      "dir": "dirName",
+      "dir_id": "dirId",
+      "user_id": "userId",
+      "size": "size",
+      "url_path": "url",
+      "thumb256_path": "thumb256",
+      "thumb1024_path": "thumb1024",
+      "shoot_time": "shootTime",
+      "md5": "md5",
+      "width": "width",
+      "height": "height",
+      "is_video": "isVideo",
+      "create_time": "createTime",
+      "modify_time": "modifyTime"
+    }
+  },
+  "download": {
+    "base_url_for_relative_path": "https://flyme-oss.meizu.com/",
+    "description": "photo.url 是相对路径（如 'b2/e2/fe/9d/...jpg'），推测前缀是 flyme-oss CDN 域名。完整下载 URL 还需要 sig 参数。",
+    "needs_sig_param": true,
+    "url_template": "<base_url_for_relative_path>{url_path}?sig=<sig_value>"
+  },
+  "rwinders": {
+    "captcha_present": true,
+    "captcha_location": "login_page",
+    "workaround": "用户在浏览器完成登录后，从请求 body 复制 token"
+  }
+}

@@ -1,0 +1,12 @@
+# Flyme 相册导出工具 — GUI 版 (scripts/flyme_export_gui.py) 依赖
+requests>=2.31.0
+cryptography>=42.0.0
+
+# 说明:
+# - Tkinter 是 Python 标准库,无需 pip 安装
+# - 以下为旧 Python(PyQt6)代码的依赖,已废弃,无需安装:
+#   PyQt6>=6.6.0
+#   PyQt6-Qt6>=6.6.0
+#   aiohttp>=3.9.0
+#   tenacity>=8.2.0
+#   PyInstaller>=6.0.0

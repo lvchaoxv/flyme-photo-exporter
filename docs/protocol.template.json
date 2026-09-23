@@ -1,0 +1,58 @@
+{
+  "$schema": "internal://flyme-exporter/protocol.schema.json",
+  "version": "1.0",
+  "captured_at": null,
+  "captured_by": null,
+  "base_url": "https://photos.flyme.cn",
+  "login": {
+    "url": null,
+    "method": "POST",
+    "headers": {},
+    "request_body_template": {},
+    "response_path": ["data"]
+  },
+  "sign": {
+    "algorithm": null,
+    "input_fields": [],
+    "key_or_secret": null,
+    "location": null
+  },
+  "crypto": {
+    "password_algorithm": null,
+    "public_key": null,
+    "key_source": "login_page_inline"
+  },
+  "album_list": {
+    "url": null,
+    "method": "GET",
+    "headers": {},
+    "query_or_body": {},
+    "response_path": ["data", "albums"]
+  },
+  "photo_list": {
+    "url": null,
+    "method": "GET",
+    "headers": {},
+    "pagination": {
+      "field": "page",
+      "page_size": 100
+    },
+    "response_path": ["data", "photos"],
+    "photo_id_field": "photoId",
+    "update_time_field": "updateTime",
+    "download_url_field": "downloadUrl",
+    "size_field": "size"
+  },
+  "download": {
+    "url_field": "downloadUrl",
+    "expires_field": "Expires",
+    "needs_range_support": true,
+    "needs_referer": true
+  },
+  "rwinders": {
+    "captcha_iframe_url": null,
+    "lock_error_codes": [],
+    "max_retries": 3,
+    "cooldown_seconds": 60
+  }
+}
