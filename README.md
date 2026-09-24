@@ -45,6 +45,8 @@
 
 下载 `dist/flyme-photo-exporter.exe`，**双击运行**即可，无需安装 Python 或任何依赖。
 
+![GUI 运行截图](docs/gui-screenshot.png)
+
 操作流程：
 
 1. 在输入框粘贴 `_utoken`（或把 `cookies.json` 放在 exe 同目录，点「读取 cookies.json」自动读取）
